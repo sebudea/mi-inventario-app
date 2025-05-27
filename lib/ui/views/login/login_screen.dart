@@ -57,11 +57,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  icon: Image.network(
-                    'https://upload.wikimedia.org/wikipedia/commons/0/09/IOS_Google_icon.png',
-                    height: 34,
-                    width: 34,
-                  ),
+                  icon: _loading
+                      ? const SizedBox.shrink()
+                      : Image.network(
+                          'https://upload.wikimedia.org/wikipedia/commons/0/09/IOS_Google_icon.png',
+                          height: 34,
+                          width: 34,
+                        ),
                   label: _loading
                       ? const SizedBox(
                           width: 20,
@@ -73,8 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? null
                       : () async {
                           setState(() => _loading = true);
-                          await authService.login(
-                              username: 'google_user', password: '');
+                          await authService.login();
                           setState(() => _loading = false);
                           // go_router se encargará del redirect
                         },

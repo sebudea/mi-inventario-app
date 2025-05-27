@@ -5,11 +5,9 @@ class AuthService extends ChangeNotifier {
 
   bool get isLoggedIn => _isLoggedIn;
 
-  Future<void> login(
-      {required String username, required String password}) async {
+  Future<void> login() async {
     // Simula un retardo de red
     await Future.delayed(const Duration(seconds: 1));
-    // Aquí podrías agregar lógica real de autenticación
     _isLoggedIn = true;
     notifyListeners();
   }
