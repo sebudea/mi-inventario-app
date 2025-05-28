@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/inventory/inventory.dart';
+import '../../domain/item/item.dart';
 import 'user_viewmodel.dart';
 
 class InventoryViewModel extends ChangeNotifier {
@@ -51,5 +52,39 @@ class InventoryViewModel extends ChangeNotifier {
     userViewModel.removeOwnedInventory(id);
 
     notifyListeners();
+  }
+
+  void addItemToInventory(String inventoryId, Item item) {
+    final index = _inventories.indexWhere((inv) => inv.id == inventoryId);
+    if (index != -1) {
+      final inventory = _inventories[index];
+      final updatedItems = List<Item>.from(inventory.items ?? []);
+      updatedItems.add(item);
+      _inventories[index] = inventory.copyWith(items: updatedItems);
+      notifyListeners();
+    }
+  }
+
+  void updateItems(String inventoryId, List<Item> newItems) {
+    final index = _inventories.indexWhere((inv) => inv.id == inventoryId);
+    if (index != -1) {
+      final inventory = _inventories[index];
+      _inventories[index] = inventory.copyWith(items: newItems);
+      notifyListeners();
+    }
+  }
+
+  void addExtraAttribute(String inventoryId, String attribute) {
+    final index = _inventories.indexWhere((inv) => inv.id == inventoryId);
+    if (index != -1) {
+      final inventory = _inventories[index];
+      final updatedAttributes = List<String>.from(inventory.extraAttributes);
+      if (!updatedAttributes.contains(attribute)) {
+        updatedAttributes.add(attribute);
+        _inventories[index] =
+            inventory.copyWith(extraAttributes: updatedAttributes);
+        notifyListeners();
+      }
+    }
   }
 }

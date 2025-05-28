@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mi_inventario/ui/viewmodels/inventory_viewmodel.dart';
 import 'package:mi_inventario/ui/viewmodels/user_viewmodel.dart';
 import 'package:provider/provider.dart';
@@ -107,6 +108,10 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 onTap: () {
                                   // Aquí puedes navegar a los detalles del inventario
+                                  context.push(
+                                    '/inventory/${Uri.encodeComponent(inventory.name)}',
+                                    extra: inventory,
+                                  );
                                 },
                               ),
                             );

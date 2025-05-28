@@ -1,6 +1,9 @@
 import 'package:go_router/go_router.dart';
+import 'package:mi_inventario/ui/views/inventory/inventory_screen.dart';
+import '../domain/inventory/inventory.dart';
 import '../ui/views/login/login_screen.dart';
 import '../ui/views/home/home_screen.dart';
+
 import '../services/auth_service.dart';
 
 GoRouter appRouter(AuthService authService) {
@@ -17,6 +20,12 @@ GoRouter appRouter(AuthService authService) {
       GoRoute(
         path: '/home',
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/inventory/:name',
+        builder: (context, state) => InventoryScreen(
+          inventory: state.extra as Inventory,
+        ),
       ),
     ],
     redirect: (context, state) {
