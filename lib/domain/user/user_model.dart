@@ -1,11 +1,11 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'user.freezed.dart';
-part 'user.g.dart';
+part 'user_model.freezed.dart';
+part 'user_model.g.dart';
 
 @freezed
-class User with _$User {
-  const factory User({
+class UserModel with _$UserModel {
+  const factory UserModel({
     required String id,
     required String name,
     required String email,
@@ -13,7 +13,8 @@ class User with _$User {
     @Default([]) List<String> ownedInventories,
     // IDs de inventarios compartidos con el usuario
     @Default([]) List<String> sharedInventories,
-  }) = _User;
+  }) = _UserModel;
 
-  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+  factory UserModel.fromJson(Map<String, dynamic> json) =>
+      _$UserModelFromJson(json);
 }

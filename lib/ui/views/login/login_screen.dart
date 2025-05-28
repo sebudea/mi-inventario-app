@@ -1,20 +1,17 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mi_inventario/ui/viewmodels/user_viewmodel.dart';
 import 'package:provider/provider.dart';
+import '../../../domain/user/user_model.dart';
 import '../../../services/auth_service.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
-
-  @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  bool _loading = false;
 
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final userViewModel = Provider.of<UserViewModel>(context);
 
     return Scaffold(
       body: Center(
@@ -23,14 +20,12 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Logo superior
               const Icon(
                 Icons.inventory_2,
                 size: 72,
                 color: Colors.blue,
               ),
               const SizedBox(height: 24),
-              // Mensaje de bienvenida
               const Text(
                 'Bienvenido a Mi Inventario',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -43,7 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              // Botón de login
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -57,32 +51,38 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  icon: _loading
+                  icon: authService.loading
                       ? const SizedBox.shrink()
                       : Image.network(
                           'https://upload.wikimedia.org/wikipedia/commons/0/09/IOS_Google_icon.png',
                           height: 34,
                           width: 34,
                         ),
-                  label: _loading
+                  label: authService.loading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Iniciar sesión con Google'),
-                  onPressed: _loading
+                  onPressed: authService.loading
                       ? null
                       : () async {
-                          setState(() => _loading = true);
-                          await authService.login();
-                          setState(() => _loading = false);
-                          // go_router se encargará del redirect
+                          User? user = await authService.signInWithGoogle();
+                          if (user != null) {
+                            UserModel userData = UserModel(
+                              id: user.uid,
+                              name: user.displayName ?? 'Usuario',
+                              email: user.email ?? 'Sin correo',
+                            );
+                            await userViewModel.loadUser(userData);
+                          } else {
+                            debugPrint('Usuario no autenticado a tiempo');
+                          }
                         },
                 ),
               ),
               const SizedBox(height: 40),
-              // Pie de página
               const Text(
                 '© 2025 Mi Inventario',
                 style: TextStyle(fontSize: 12, color: Colors.black38),

@@ -1,4 +1,4 @@
-package com.example.mi_inventario
+package co.edu.udea.sebudea.miinventario
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -178,7 +178,7 @@ class _$InventoryImpl implements _Inventory {
       {required this.id,
       required this.name,
       required this.adminId,
-      required final List<String> extraAttributes,
+      final List<String> extraAttributes = const [],
       final List<Item> items = const [],
       final List<SharedUser> sharedUsers = const []})
       : _extraAttributes = extraAttributes,
@@ -200,6 +200,7 @@ class _$InventoryImpl implements _Inventory {
 // ID del usuario creador (admin)
 // Atributos extra definidos para los items
   @override
+  @JsonKey()
   List<String> get extraAttributes {
     if (_extraAttributes is EqualUnmodifiableListView) return _extraAttributes;
     // ignore: implicit_dynamic_type
@@ -278,7 +279,7 @@ abstract class _Inventory implements Inventory {
       {required final String id,
       required final String name,
       required final String adminId,
-      required final List<String> extraAttributes,
+      final List<String> extraAttributes,
       final List<Item> items,
       final List<SharedUser> sharedUsers}) = _$InventoryImpl;
 

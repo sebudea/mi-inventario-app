@@ -11,9 +11,10 @@ _$InventoryImpl _$$InventoryImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       name: json['name'] as String,
       adminId: json['adminId'] as String,
-      extraAttributes: (json['extraAttributes'] as List<dynamic>)
-          .map((e) => e as String)
-          .toList(),
+      extraAttributes: (json['extraAttributes'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
       items: (json['items'] as List<dynamic>?)
               ?.map((e) => Item.fromJson(e as Map<String, dynamic>))
               .toList() ??

@@ -13,7 +13,7 @@ class Inventory with _$Inventory {
     required String adminId, // ID del usuario creador (admin)
 
     // Atributos extra definidos para los items
-    required List<String> extraAttributes,
+    @Default([]) List<String> extraAttributes,
     @Default([]) List<Item> items, // Lista de items del inventario
     @Default([]) List<SharedUser> sharedUsers, // Usuarios con acceso compartido
   }) = _Inventory;

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "370522650838",
+    "project_id": "mi-inventario-14a0b",
+    "storage_bucket": "mi-inventario-14a0b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:370522650838:android:08784286621d77ece33177",
+        "android_client_info": {
+          "package_name": "co.edu.udea.sebudea.miinventario"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "370522650838-o9teu39had2n4qap7v71efde4jqob8b5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvEfj-oI_tmN68Tl-ElhYxAySeBKFOZRw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "370522650838-o9teu39had2n4qap7v71efde4jqob8b5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
