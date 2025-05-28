@@ -74,6 +74,19 @@ class InventoryViewModel extends ChangeNotifier {
     }
   }
 
+  void removeItemFromInventory(String inventoryId, int itemIndex) {
+    final index = _inventories.indexWhere((inv) => inv.id == inventoryId);
+    if (index != -1) {
+      final inventory = _inventories[index];
+      final updatedItems = List<Item>.from(inventory.items ?? []);
+      if (itemIndex >= 0 && itemIndex < updatedItems.length) {
+        updatedItems.removeAt(itemIndex);
+        _inventories[index] = inventory.copyWith(items: updatedItems);
+        notifyListeners();
+      }
+    }
+  }
+
   void addExtraAttribute(String inventoryId, String attribute) {
     final index = _inventories.indexWhere((inv) => inv.id == inventoryId);
     if (index != -1) {

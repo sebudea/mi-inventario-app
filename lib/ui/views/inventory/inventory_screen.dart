@@ -197,7 +197,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add),
-                  label: const Text('Agregar fila'),
+                  label: const Text('Agregar Item'),
                   onPressed: () => addRow(context, inventory),
                 ),
               ],
