@@ -100,4 +100,26 @@ class InventoryViewModel extends ChangeNotifier {
       }
     }
   }
+
+  void removeExtraAttribute(String inventoryId, String attribute) {
+    final index = _inventories.indexWhere((inv) => inv.id == inventoryId);
+    if (index != -1) {
+      final inventory = _inventories[index];
+      final updatedAttributes = List<String>.from(inventory.extraAttributes);
+      updatedAttributes.remove(attribute);
+
+      // Limpia ese atributo de todos los items
+      final updatedItems = (inventory.items ?? []).map((item) {
+        final updatedExtra = Map<String, dynamic>.from(item.extraAttributes);
+        updatedExtra.remove(attribute);
+        return item.copyWith(extraAttributes: updatedExtra);
+      }).toList();
+
+      _inventories[index] = inventory.copyWith(
+        extraAttributes: updatedAttributes,
+        items: updatedItems,
+      );
+      notifyListeners();
+    }
+  }
 }

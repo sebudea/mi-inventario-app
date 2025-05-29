@@ -80,10 +80,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   void dispose() {
-    for (final node in _focusNodes.values) {
+    _verticalScrollController.dispose();
+    // Limpia los focus nodes
+    for (var node in _focusNodes.values) {
       node.dispose();
     }
-    _verticalScrollController.dispose();
     super.dispose();
   }
 
@@ -116,11 +117,33 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       controller: _verticalScrollController, // <-- aquí
                       scrollDirection: Axis.vertical,
                       child: DataTable(
-                        columns: columns
-                            .map((col) => DataColumn(
-                                label: Text(
-                                    col[0].toUpperCase() + col.substring(1))))
-                            .toList(),
+                        columns: columns.map((col) {
+                          final isExtra =
+                              inventory.extraAttributes.contains(col);
+                          return DataColumn(
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(col[0].toUpperCase() + col.substring(1)),
+                                if (isExtra)
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(16),
+                                    onTap: () {
+                                      Provider.of<InventoryViewModel>(context,
+                                              listen: false)
+                                          .removeExtraAttribute(
+                                              inventory.id, col);
+                                    },
+                                    child: const Icon(
+                                      Icons.delete,
+                                      size: 18,
+                                      color: Colors.redAccent,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                         rows: List<DataRow>.generate(
                           items.length,
                           (rowIndex) => DataRow(
