@@ -18,6 +18,10 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   late ScrollController _verticalScrollController;
+  int? editingRow;
+
+  // Focus nodes para cada celda
+  final Map<String, FocusNode> _focusNodes = {};
 
   // Obtiene todas las columnas dinámicamente
   List<String> getAllColumns(List<Item> items, List<String> extraAttributes) {
@@ -76,6 +80,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   void dispose() {
+    for (final node in _focusNodes.values) {
+      node.dispose();
+    }
     _verticalScrollController.dispose();
     super.dispose();
   }
@@ -134,12 +141,28 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     minWidth: 40,
                                     maxWidth: 80,
                                   ),
-                                  child: TextFormField(
-                                    initialValue: initialValue,
-                                    decoration: const InputDecoration(
-                                        border: InputBorder.none),
-                                    onChanged: (value) => updateCell(context,
-                                        rowIndex, col, value, inventory),
+                                  child: Focus(
+                                    focusNode: _focusNodes['$rowIndex-$col'] ??=
+                                        FocusNode(),
+                                    onFocusChange: (hasFocus) {
+                                      if (!hasFocus && editingRow == rowIndex) {
+                                        setState(() {
+                                          editingRow = null;
+                                        });
+                                      }
+                                    },
+                                    child: TextFormField(
+                                      initialValue: initialValue,
+                                      decoration: const InputDecoration(
+                                          border: InputBorder.none),
+                                      onTap: () {
+                                        setState(() {
+                                          editingRow = rowIndex;
+                                        });
+                                      },
+                                      onChanged: (value) => updateCell(context,
+                                          rowIndex, col, value, inventory),
+                                    ),
                                   ),
                                 ),
                               );
@@ -203,6 +226,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ],
             ),
           ),
+          floatingActionButton: editingRow != null
+              ? FloatingActionButton.extended(
+                  backgroundColor: Colors.red,
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Eliminar item'),
+                  onPressed: () {
+                    Provider.of<InventoryViewModel>(context, listen: false)
+                        .removeItemFromInventory(inventory.id, editingRow!);
+                    setState(() {
+                      editingRow = null;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Item eliminado')),
+                    );
+                  },
+                )
+              : null,
         );
       },
     );
