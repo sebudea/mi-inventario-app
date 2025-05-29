@@ -110,137 +110,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
             child: Column(
               children: [
                 Expanded(
-                  // <-- Esto permite el scroll vertical
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SingleChildScrollView(
-                      controller: _verticalScrollController, // <-- aquí
+                      controller: _verticalScrollController,
                       scrollDirection: Axis.vertical,
                       child: DataTable(
-                        columns: columns.map((col) {
-                          final isExtra =
-                              inventory.extraAttributes.contains(col);
-                          return DataColumn(
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(col[0].toUpperCase() + col.substring(1)),
-                                if (isExtra)
-                                  InkWell(
-                                    borderRadius: BorderRadius.circular(16),
-                                    onTap: () {
-                                      Provider.of<InventoryViewModel>(context,
-                                              listen: false)
-                                          .removeExtraAttribute(
-                                              inventory.id, col);
-                                    },
-                                    child: const Icon(
-                                      Icons.delete,
-                                      size: 18,
-                                      color: Colors.redAccent,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        rows: List<DataRow>.generate(
-                          items.length,
-                          (rowIndex) => DataRow(
-                            cells: columns.map((col) {
-                              String initialValue;
-                              final item = items[rowIndex];
-                              if (col == "name") {
-                                initialValue = item.name;
-                              } else if (col == "quantity") {
-                                initialValue = item.quantity.toString();
-                              } else {
-                                initialValue =
-                                    item.extraAttributes[col]?.toString() ?? '';
-                              }
-                              return DataCell(
-                                ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    minWidth: 40,
-                                    maxWidth: 80,
-                                  ),
-                                  child: Focus(
-                                    focusNode: _focusNodes['$rowIndex-$col'] ??=
-                                        FocusNode(),
-                                    onFocusChange: (hasFocus) {
-                                      if (!hasFocus && editingRow == rowIndex) {
-                                        setState(() {
-                                          editingRow = null;
-                                        });
-                                      }
-                                    },
-                                    child: TextFormField(
-                                      initialValue: initialValue,
-                                      decoration: const InputDecoration(
-                                          border: InputBorder.none),
-                                      onTap: () {
-                                        setState(() {
-                                          editingRow = rowIndex;
-                                        });
-                                      },
-                                      onChanged: (value) => updateCell(context,
-                                          rowIndex, col, value, inventory),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
+                        columns: _buildColumns(context, inventory, columns),
+                        rows: _buildRows(context, inventory, items, columns),
                       ),
                     ),
                   ),
                 ),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: const Text('Agregar atributo'),
-                      onPressed: () async {
-                        final controller = TextEditingController();
-                        final result = await showDialog<String>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Nuevo atributo'),
-                            content: TextField(
-                              controller: controller,
-                              decoration: const InputDecoration(
-                                labelText: 'Nombre del atributo',
-                              ),
-                              autofocus: true,
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('Cancelar'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  final value = controller.text.trim();
-                                  if (value.isNotEmpty) {
-                                    Navigator.of(context).pop(value);
-                                  }
-                                },
-                                child: const Text('Agregar'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (result != null && result.isNotEmpty) {
-                          Provider.of<InventoryViewModel>(context,
-                                  listen: false)
-                              .addExtraAttribute(inventory.id, result);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add),
                   label: const Text('Agregar Item'),
@@ -250,10 +131,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
             ),
           ),
           floatingActionButton: editingRow != null
-              ? FloatingActionButton.extended(
+              ? FloatingActionButton.small(
                   backgroundColor: Colors.red,
-                  icon: const Icon(Icons.delete),
-                  label: const Text('Eliminar item'),
+                  child: const Icon(Icons.delete),
                   onPressed: () {
                     Provider.of<InventoryViewModel>(context, listen: false)
                         .removeItemFromInventory(inventory.id, editingRow!);
@@ -268,6 +148,138 @@ class _InventoryScreenState extends State<InventoryScreen> {
               : null,
         );
       },
+    );
+  }
+
+  // Métodos extraídos para mayor limpieza:
+
+  List<DataColumn> _buildColumns(
+      BuildContext context, Inventory inventory, List<String> columns) {
+    final cols = columns.map((col) {
+      final isExtra = inventory.extraAttributes.contains(col);
+      return DataColumn(
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(col[0].toUpperCase() + col.substring(1)),
+            if (isExtra)
+              Padding(
+                padding: const EdgeInsets.only(left: 2),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    Provider.of<InventoryViewModel>(context, listen: false)
+                        .removeExtraAttribute(inventory.id, col);
+                  },
+                  child: const Icon(
+                    Icons.delete,
+                    size: 18,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }).toList();
+
+    // Columna extra SOLO para el header (botón agregar atributo)
+    cols.add(
+      DataColumn(
+        label: IconButton(
+          icon: const Icon(Icons.add),
+          tooltip: 'Agregar atributo',
+          onPressed: () async {
+            final controller = TextEditingController();
+            final result = await showDialog<String>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Nuevo atributo'),
+                content: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre del atributo',
+                  ),
+                  autofocus: true,
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancelar'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final value = controller.text.trim();
+                      if (value.isNotEmpty) {
+                        Navigator.of(context).pop(value);
+                      }
+                    },
+                    child: const Text('Agregar'),
+                  ),
+                ],
+              ),
+            );
+            if (result != null && result.isNotEmpty) {
+              Provider.of<InventoryViewModel>(context, listen: false)
+                  .addExtraAttribute(inventory.id, result);
+            }
+          },
+        ),
+      ),
+    );
+
+    return cols;
+  }
+
+  List<DataRow> _buildRows(BuildContext context, Inventory inventory,
+      List<Item> items, List<String> columns) {
+    return List<DataRow>.generate(
+      items.length,
+      (rowIndex) => DataRow(
+        cells: [
+          ...columns.map((col) {
+            String initialValue;
+            final item = items[rowIndex];
+            if (col == "name") {
+              initialValue = item.name;
+            } else if (col == "quantity") {
+              initialValue = item.quantity.toString();
+            } else {
+              initialValue = item.extraAttributes[col]?.toString() ?? '';
+            }
+            return DataCell(
+              ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: 40,
+                  maxWidth: 80,
+                ),
+                child: Focus(
+                  focusNode: _focusNodes['$rowIndex-$col'] ??= FocusNode(),
+                  onFocusChange: (hasFocus) {
+                    if (!hasFocus && editingRow == rowIndex) {
+                      setState(() {
+                        editingRow = null;
+                      });
+                    }
+                  },
+                  child: TextFormField(
+                    initialValue: initialValue,
+                    decoration: const InputDecoration(border: InputBorder.none),
+                    onTap: () {
+                      setState(() {
+                        editingRow = rowIndex;
+                      });
+                    },
+                    onChanged: (value) =>
+                        updateCell(context, rowIndex, col, value, inventory),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+          DataCell(Container()), // <-- Celda vacía para la columna del botón
+        ],
+      ),
     );
   }
 }
