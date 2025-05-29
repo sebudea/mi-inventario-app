@@ -15,6 +15,7 @@ class UserViewModel extends ChangeNotifier {
   String get userId => _userModel?.id ?? '';
   String get userName => _userModel?.name ?? '';
   String get userEmail => _userModel?.email ?? '';
+  List<String> get ownedInventories => _userModel?.ownedInventories ?? [];
 
   bool get loading => _loading;
   String? get errorMessage => _errorMessage;
@@ -52,18 +53,24 @@ class UserViewModel extends ChangeNotifier {
   }
 
   // Agrega un ID de inventario propio al usuario actual
-  void addOwnedInventory(String inventoryId) {
+  Future<void> addOwnedInventory(String inventoryId) async {
     if (_userModel != null &&
         !_userModel!.ownedInventories.contains(inventoryId)) {
       _userModel = _userModel!.copyWith(
         ownedInventories: [..._userModel!.ownedInventories, inventoryId],
       );
       notifyListeners();
+      try {
+        await _userRepository.updateUser(_userModel!);
+      } catch (e) {
+        // Maneja el error si falla la actualización remota
+        debugPrint('Error al actualizar usuario en Firestore: $e');
+      }
     }
   }
 
   // Elimina un ID de inventario propio del usuario actual
-  void removeOwnedInventory(String inventoryId) {
+  Future<void> removeOwnedInventory(String inventoryId) async {
     if (_userModel != null &&
         _userModel!.ownedInventories.contains(inventoryId)) {
       _userModel = _userModel!.copyWith(
@@ -72,6 +79,11 @@ class UserViewModel extends ChangeNotifier {
             .toList(),
       );
       notifyListeners();
+      try {
+        await _userRepository.updateUser(_userModel!);
+      } catch (e) {
+        debugPrint('Error al actualizar usuario en Firestore: $e');
+      }
     }
   }
 }

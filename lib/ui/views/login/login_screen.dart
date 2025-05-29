@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mi_inventario/ui/viewmodels/inventory_viewmodel.dart';
 import 'package:mi_inventario/ui/viewmodels/user_viewmodel.dart';
 import 'package:provider/provider.dart';
 import '../../../domain/user/user_model.dart';
@@ -12,6 +13,7 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final userViewModel = Provider.of<UserViewModel>(context);
+    final inventoryViewModel = Provider.of<InventoryViewModel>(context);
 
     return Scaffold(
       body: Center(
@@ -76,6 +78,11 @@ class LoginScreen extends StatelessWidget {
                               email: user.email ?? 'Sin correo',
                             );
                             await userViewModel.loadUser(userData);
+
+                            debugPrint(
+                                "Inventarios del usuario: ${userViewModel.ownedInventories}");
+                            await inventoryViewModel.loadInventories(
+                                userViewModel.ownedInventories);
                           } else {
                             debugPrint('Usuario no autenticado a tiempo');
                           }

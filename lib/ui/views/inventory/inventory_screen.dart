@@ -133,6 +133,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           floatingActionButton: editingRow != null
               ? FloatingActionButton.small(
                   backgroundColor: Colors.red,
+                  tooltip: 'Eliminar Item',
                   child: const Icon(Icons.delete),
                   onPressed: () {
                     Provider.of<InventoryViewModel>(context, listen: false)
