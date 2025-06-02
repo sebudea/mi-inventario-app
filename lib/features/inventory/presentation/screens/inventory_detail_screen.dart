@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_inventario/features/inventory/domain/inventory.dart';
 import 'package:mi_inventario/features/inventory/domain/item.dart';
 import 'package:mi_inventario/features/inventory/presentation/providers/inventory_providers.dart';
-import 'package:mi_inventario/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class InventoryDetailScreen extends ConsumerStatefulWidget {
@@ -130,7 +129,8 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
               SizedBox(height: 8),
               Text('• Selecciona una fila y usa el botón rojo para eliminarla'),
               SizedBox(height: 8),
-              Text('• Los cambios se guardan automáticamente'),
+              Text(
+                  '• Los cambios deben guardarse manualmente al salir de la pantalla'),
             ],
           ),
         ),
@@ -197,16 +197,17 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
+              Icon(Icons.check_circle,
+                  color: Theme.of(context).colorScheme.onPrimary),
+              const SizedBox(width: 8),
               Text('Cambios guardados correctamente'),
             ],
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.green,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           duration: Duration(seconds: 2),
         ),
       );
@@ -217,11 +218,13 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error, color: Colors.white),
+              Icon(Icons.error, color: Theme.of(context).colorScheme.onError),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Error al guardar: ${e.toString()}',
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.onError),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -229,7 +232,7 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
             ],
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 4),
         ),
       );

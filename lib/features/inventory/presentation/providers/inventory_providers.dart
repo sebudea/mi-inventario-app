@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_inventario/features/auth/domain/user_model.dart';
 import 'package:mi_inventario/features/inventory/data/repositories/firestore_inventory_repository.dart';
@@ -10,7 +9,6 @@ final currentInventoryProvider = StateProvider<Inventory?>((ref) => null);
 
 final userInventoriesProvider = StreamProvider.family<List<Inventory>, String>(
   (ref, userId) {
-    debugPrint('🔍 Intentando obtener inventarios para usuario: $userId');
     final repository = ref.watch(inventoryRepositoryProvider);
     return repository.watchUserInventories(userId);
   },
@@ -18,7 +16,6 @@ final userInventoriesProvider = StreamProvider.family<List<Inventory>, String>(
 
 final selectedInventoryProvider = StreamProvider.family<Inventory, String>(
   (ref, inventoryId) {
-    debugPrint('🔍 Intentando obtener inventario: $inventoryId');
     final repository = ref.watch(inventoryRepositoryProvider);
     return repository.watchInventory(inventoryId);
   },
@@ -38,8 +35,6 @@ class InventoryNotifier extends AsyncNotifier<void> {
     required UserModel user,
     List<String> extraAttributes = const [],
   }) async {
-    debugPrint(
-        '📝 Intentando crear inventario: $name para usuario: ${user.email}');
     final repository = ref.read(inventoryRepositoryProvider);
 
     final inventory = Inventory(
@@ -57,7 +52,6 @@ class InventoryNotifier extends AsyncNotifier<void> {
 
   Future<void> updateInventory(Inventory inventory) async {
     final repository = ref.read(inventoryRepositoryProvider);
-
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => repository.updateInventory(inventory));
   }
@@ -105,7 +99,6 @@ class InventoryNotifier extends AsyncNotifier<void> {
   }
 
   Future<void> addItemToInventory(String inventoryId, Item item) async {
-    debugPrint('📝 Agregando item a inventario: $inventoryId');
     final repository = ref.read(inventoryRepositoryProvider);
 
     state = const AsyncLoading();
@@ -113,7 +106,6 @@ class InventoryNotifier extends AsyncNotifier<void> {
   }
 
   Future<void> updateItems(String inventoryId, List<Item> items) async {
-    debugPrint('📝 Actualizando items en inventario: $inventoryId');
     final repository = ref.read(inventoryRepositoryProvider);
 
     // Primero obtenemos el inventario actual
@@ -130,7 +122,6 @@ class InventoryNotifier extends AsyncNotifier<void> {
   }
 
   Future<void> addExtraAttribute(String inventoryId, String attribute) async {
-    debugPrint('📝 Agregando atributo a inventario: $inventoryId');
     final repository = ref.read(inventoryRepositoryProvider);
     final inventoryStream = repository.watchInventory(inventoryId);
 
@@ -147,7 +138,6 @@ class InventoryNotifier extends AsyncNotifier<void> {
 
   Future<void> removeExtraAttribute(
       String inventoryId, String attribute) async {
-    debugPrint('🗑️ Eliminando atributo de inventario: $inventoryId');
     final repository = ref.read(inventoryRepositoryProvider);
     final inventoryStream = repository.watchInventory(inventoryId);
 

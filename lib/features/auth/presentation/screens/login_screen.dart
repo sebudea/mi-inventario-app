@@ -7,7 +7,7 @@ class LoginScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
+    ref.watch(authProvider);
     final authNotifier = ref.watch(authProvider.notifier);
     final isLoading = ref.watch(authProvider.notifier).isLoading;
 
@@ -18,10 +18,10 @@ class LoginScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.inventory_2,
                 size: 72,
-                color: Colors.blue,
+                color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 24),
               const Text(
@@ -30,9 +30,12 @@ class LoginScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Gestiona tus articulos de forma sencilla y segura.',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -40,10 +43,12 @@ class LoginScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
                     minimumSize: const Size(220, 48),
-                    side: const BorderSide(color: Colors.grey),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                     elevation: 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
@@ -71,9 +76,12 @@ class LoginScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              const Text(
+              Text(
                 '© 2025 Mi Inventario',
-                style: TextStyle(fontSize: 12, color: Colors.black38),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),

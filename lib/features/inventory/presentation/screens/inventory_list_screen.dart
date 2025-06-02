@@ -138,11 +138,11 @@ class InventoryListScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'El nombre debe ser descriptivo y único.',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.outline,
               ),
             ),
           ],
@@ -182,31 +182,34 @@ class InventoryListScreen extends ConsumerWidget {
   }
 }
 
-class _ErrorView extends StatelessWidget {
+class _ErrorView extends ConsumerWidget {
   final Object error;
 
   const _ErrorView({required this.error});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              color: Colors.red,
+              color: Theme.of(context).colorScheme.error,
               size: 48,
             ),
             const SizedBox(height: 16),
             SelectableText.rich(
               TextSpan(
                 children: [
-                  const TextSpan(
+                  TextSpan(
                     text: 'Error: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                   TextSpan(text: error.toString()),
                 ],
@@ -214,8 +217,14 @@ class _ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => context.go('/'),
+            FilledButton.icon(
+              onPressed: () {
+                // Invalidar providers para forzar actualización
+                ref.invalidate(authProvider);
+                ref.invalidate(userInventoriesProvider);
+                // Redirigir a la pantalla principal
+                context.go('/');
+              },
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
             ),
@@ -301,25 +310,26 @@ class _InventoryCard extends ConsumerWidget {
         );
       },
       background: Container(
-        color: Colors.red,
+        color: Theme.of(context).colorScheme.error,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onError),
       ),
       secondaryBackground: Container(
-        color: Colors.red,
+        color: Theme.of(context).colorScheme.error,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onError),
       ),
       child: Card(
         clipBehavior: Clip.antiAlias,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         elevation: 2,
         child: ListTile(
-          leading: const CircleAvatar(
-            backgroundColor: Colors.deepPurple,
-            child: Icon(Icons.inventory_2, color: Colors.white),
+          leading: Icon(
+            Icons.inventory_2,
+            color: Theme.of(context).colorScheme.primary,
+            size: 32,
           ),
           title: Text(
             inventory.name,
@@ -327,7 +337,9 @@ class _InventoryCard extends ConsumerWidget {
           ),
           subtitle: Text(
             '${inventory.items.length} items',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
           trailing: const Icon(Icons.chevron_right),
           onTap: () {
@@ -357,8 +369,8 @@ class _InventoryCard extends ConsumerWidget {
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             child: const Text('Eliminar'),
           ),

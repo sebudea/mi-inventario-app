@@ -27,28 +27,25 @@ class FirestoreInventoryRepository {
   void _checkAuth() {
     final user = _auth.currentUser;
     if (user == null) {
-      debugPrint('🚫 Error: Usuario no autenticado');
+      debugPrint('🚫 Firebase: Usuario no autenticado');
       throw FirebaseException(
         plugin: 'firestore',
         message: 'Must be logged in to perform this operation',
       );
     }
-    debugPrint('✅ Usuario autenticado: ${user.email}');
   }
 
   // Create a new inventory
   Future<void> createInventory(Inventory inventory) async {
     try {
       _checkAuth();
-      debugPrint('📝 Creando inventario: ${inventory.name}');
-      debugPrint('📄 Datos: ${inventory.toJson()}');
+      debugPrint('📝 Firebase: Creando inventario ${inventory.id}');
 
       await _firestore.collection(_collection).doc(inventory.id).set(
             inventory.toJson(),
           );
-      debugPrint('✅ Inventario creado exitosamente');
     } catch (e) {
-      debugPrint('🚫 Error creando inventario: $e');
+      debugPrint('❌ Firebase Error: Error al crear inventario - $e');
       rethrow;
     }
   }
@@ -56,61 +53,53 @@ class FirestoreInventoryRepository {
   // Get a single inventory by ID
   Stream<Inventory> watchInventory(String id) {
     _checkAuth();
-    debugPrint('👀 Observando inventario: $id');
+    debugPrint('👀 Firebase: Observando inventario $id');
 
     return _firestore.collection(_collection).doc(id).snapshots().map((doc) {
       if (!doc.exists) {
-        debugPrint('🚫 Inventario no encontrado: $id');
+        debugPrint('❌ Firebase Error: Inventario no encontrado - $id');
         throw FirebaseException(
           plugin: 'firestore',
           message: 'Inventory not found',
         );
       }
-      debugPrint('📥 Datos de inventario recibidos: ${doc.data()}');
       return Inventory.fromJson(doc.data()!);
     });
   }
 
-  // Get all inventories for a user (either as admin or shared)
+  // Get all inventories for a user
   Stream<List<Inventory>> watchUserInventories(String userId) {
     _checkAuth();
-    debugPrint('👀 Observando inventarios del usuario: $userId');
+    debugPrint('👀 Firebase: Observando inventarios del usuario $userId');
 
     return _firestore
         .collection(_collection)
         .where('adminId', isEqualTo: userId)
         .snapshots()
-        .map((snapshot) {
-      final inventories =
-          snapshot.docs.map((doc) => Inventory.fromJson(doc.data())).toList();
-      debugPrint('📥 ${inventories.length} inventarios encontrados');
-      return inventories;
-    });
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Inventory.fromJson(doc.data()))
+            .toList());
   }
 
   // Update an inventory
   Future<void> updateInventory(Inventory inventory) async {
-    debugPrint('📝 Actualizando inventario: ${inventory.name}');
     try {
       _checkAuth();
+      debugPrint('📝 Firebase: Actualizando inventario ${inventory.id}');
 
       final docRef = _firestore.collection(_collection).doc(inventory.id);
       final doc = await docRef.get();
 
       if (!doc.exists) {
-        debugPrint('❌ Inventario no encontrado: ${inventory.id}');
         throw Exception('Inventario no encontrado');
       }
 
-      // Convertimos el inventario a JSON y aseguramos que los items se serialicen correctamente
       final data = inventory.toJson();
       data['items'] = inventory.items.map((item) => item.toJson()).toList();
 
-      debugPrint('📄 Datos a actualizar: $data');
       await docRef.update(data);
-      debugPrint('✅ Inventario actualizado exitosamente');
     } catch (e) {
-      debugPrint('🚫 Error actualizando inventario: $e');
+      debugPrint('❌ Firebase Error: Error al actualizar inventario - $e');
       rethrow;
     }
   }
@@ -119,12 +108,11 @@ class FirestoreInventoryRepository {
   Future<void> deleteInventory(String id) async {
     try {
       _checkAuth();
-      debugPrint('🗑️ Eliminando inventario: $id');
+      debugPrint('🗑️ Firebase: Eliminando inventario $id');
 
       await _firestore.collection(_collection).doc(id).delete();
-      debugPrint('✅ Inventario eliminado exitosamente');
     } catch (e) {
-      debugPrint('🚫 Error eliminando inventario: $e');
+      debugPrint('❌ Firebase Error: Error al eliminar inventario - $e');
       rethrow;
     }
   }
