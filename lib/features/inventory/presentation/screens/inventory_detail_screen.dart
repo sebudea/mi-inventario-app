@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_inventario/features/inventory/domain/inventory.dart';
 import 'package:mi_inventario/features/inventory/domain/item.dart';
-import 'package:mi_inventario/features/inventory/presentation/providers/inventory_provider.dart';
+import 'package:mi_inventario/features/inventory/presentation/providers/inventory_providers.dart';
 import 'package:mi_inventario/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -23,6 +23,9 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
   late ScrollController _verticalScrollController;
   String? selectedItemId;
   final Map<String, FocusNode> _focusNodes = {};
+  List<Item> _localItems = [];
+  List<String> _localExtraAttributes = [];
+  bool _hasUnsavedChanges = false;
 
   @override
   void initState() {
@@ -41,26 +44,40 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inventoriesAsync = ref.watch(inventoryNotifierProvider);
+    final inventoryAsync =
+        ref.watch(selectedInventoryProvider(widget.inventory.id));
 
     return Scaffold(
       appBar: _buildAppBar(),
-      body: inventoriesAsync.when(
+      body: inventoryAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => _ErrorView(error: error),
-        data: (inventories) {
-          final inventory = _getCurrentInventory(inventories);
-          if (inventory == null) {
-            return const Center(
-              child: Text('Inventario no encontrado'),
-            );
+        data: (inventory) {
+          // Inicializar items y atributos locales si es necesario
+          if (_localItems.isEmpty) {
+            _localItems = List.from(inventory.items);
+            _localExtraAttributes = List.from(inventory.extraAttributes);
           }
           return _InventoryDetailView(
             inventory: inventory,
+            localItems: _localItems,
+            localExtraAttributes: _localExtraAttributes,
             verticalScrollController: _verticalScrollController,
             selectedItemId: selectedItemId,
             focusNodes: _focusNodes,
             onItemSelected: (itemId) => setState(() => selectedItemId = itemId),
+            onItemsChanged: (items) {
+              setState(() {
+                _localItems = items;
+                _hasUnsavedChanges = true;
+              });
+            },
+            onAttributesChanged: (attributes) {
+              setState(() {
+                _localExtraAttributes = attributes;
+                _hasUnsavedChanges = true;
+              });
+            },
           );
         },
       ),
@@ -71,21 +88,30 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
     return AppBar(
       title: Text("Inventario ${widget.inventory.name}"),
       centerTitle: true,
+      leading: _hasUnsavedChanges
+          ? IconButton(
+              icon: const Icon(Icons.save_rounded),
+              onPressed: () => _showSaveConfirmationDialog(),
+              tooltip: 'Guardar y Volver',
+              style: IconButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor:
+                    Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            )
+          : IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+              tooltip: 'Volver',
+            ),
       actions: [
         IconButton(
           icon: const Icon(Icons.help_outline),
           onPressed: () => _showHelp(context),
+          tooltip: 'Ayuda',
         ),
       ],
     );
-  }
-
-  Inventory? _getCurrentInventory(List<Inventory> inventories) {
-    try {
-      return inventories.firstWhere((inv) => inv.id == widget.inventory.id);
-    } catch (e) {
-      return null;
-    }
   }
 
   void _showHelp(BuildContext context) {
@@ -116,6 +142,98 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showSaveConfirmationDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Guardar Cambios'),
+        content:
+            const Text('¿Deseas guardar los cambios y volver al inventario?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(context).pop(true),
+            icon: const Icon(Icons.save),
+            label: const Text('Guardar'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await _saveChanges();
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Volver a la pantalla anterior
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (!_hasUnsavedChanges) return;
+
+    try {
+      // Creamos una versión actualizada del inventario con todos los cambios locales
+      final updatedInventory = widget.inventory.copyWith(
+        items: _localItems,
+        extraAttributes: _localExtraAttributes,
+      );
+
+      await ref
+          .read(inventoryNotifierProvider.notifier)
+          .updateInventory(updatedInventory);
+
+      setState(() {
+        _hasUnsavedChanges = false;
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Cambios guardados correctamente'),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Error al guardar: ${e.toString()}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 }
 
@@ -165,43 +283,51 @@ class _ErrorView extends StatelessWidget {
 
 class _InventoryDetailView extends ConsumerWidget {
   final Inventory inventory;
+  final List<Item> localItems;
+  final List<String> localExtraAttributes;
   final ScrollController verticalScrollController;
   final String? selectedItemId;
   final Map<String, FocusNode> focusNodes;
   final ValueChanged<String?> onItemSelected;
+  final ValueChanged<List<Item>> onItemsChanged;
+  final ValueChanged<List<String>> onAttributesChanged;
 
   const _InventoryDetailView({
     required this.inventory,
+    required this.localItems,
+    required this.localExtraAttributes,
     required this.verticalScrollController,
     required this.selectedItemId,
     required this.focusNodes,
     required this.onItemSelected,
+    required this.onItemsChanged,
+    required this.onAttributesChanged,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = List<Item>.unmodifiable(inventory.items);
-    final columns = _getAllColumns(items, inventory.extraAttributes);
+    final columns = _getAllColumns(localItems, localExtraAttributes);
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          if (items.isEmpty)
+          if (localItems.isEmpty)
             const Expanded(
               child: Center(
                 child: Text(
-                  'No hay items en este inventario',
+                  'No hay items en este inventario, agrega uno para empezar',
                   style: TextStyle(fontSize: 16, color: Colors.grey),
+                  textAlign: TextAlign.center,
                 ),
               ),
             )
           else
             Expanded(
-              child: _buildDataTable(context, ref, items, columns),
+              child: _buildDataTable(context, ref, localItems, columns),
             ),
           const SizedBox(height: 16),
-          _buildBottomActions(context, ref, items),
+          _buildBottomActions(context, ref, localItems),
         ],
       ),
     );
@@ -219,7 +345,7 @@ class _InventoryDetailView extends ConsumerWidget {
         controller: verticalScrollController,
         scrollDirection: Axis.vertical,
         child: DataTable(
-          columns: _buildColumns(context, ref, columns),
+          columns: _buildColumns(context, columns),
           rows: _buildRows(items, columns, ref),
           showCheckboxColumn: true,
         ),
@@ -253,23 +379,19 @@ class _InventoryDetailView extends ConsumerWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            onPressed: () => _deleteItem(context, ref, selectedItem),
+            onPressed: () => _deleteItem(context, selectedItem),
           ),
       ],
     );
   }
 
-  void _deleteItem(BuildContext context, WidgetRef ref, Item itemToDelete) {
+  void _deleteItem(BuildContext context, Item itemToDelete) {
     if (itemToDelete.id.isEmpty) return;
 
-    final updatedItems = List<Item>.from(inventory.items)
+    final updatedItems = List<Item>.from(localItems)
       ..removeWhere((item) => item.id == itemToDelete.id);
 
-    ref.read(inventoryNotifierProvider.notifier).updateItems(
-          inventory.id,
-          updatedItems,
-        );
-
+    onItemsChanged(updatedItems);
     onItemSelected(null);
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -289,10 +411,9 @@ class _InventoryDetailView extends ConsumerWidget {
     return columns.toList();
   }
 
-  List<DataColumn> _buildColumns(
-      BuildContext context, WidgetRef ref, List<String> columns) {
+  List<DataColumn> _buildColumns(BuildContext context, List<String> columns) {
     final cols = columns.map((col) {
-      final isExtra = inventory.extraAttributes.contains(col);
+      final isExtra = localExtraAttributes.contains(col);
       return DataColumn(
         label: Row(
           mainAxisSize: MainAxisSize.min,
@@ -301,15 +422,12 @@ class _InventoryDetailView extends ConsumerWidget {
               _getColumnTitle(col),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            if (isExtra)
-              Padding(
-                padding: const EdgeInsets.only(left: 2),
-                child: IconButton(
-                  icon: const Icon(Icons.delete,
-                      size: 18, color: Colors.redAccent),
-                  tooltip: 'Eliminar atributo',
-                  onPressed: () => _removeAttribute(ref, col),
-                ),
+            if (isExtra && col != "article" && col != "quantity")
+              IconButton(
+                icon:
+                    const Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                tooltip: 'Eliminar atributo',
+                onPressed: () => _showDeleteAttributeDialog(context, col),
               ),
           ],
         ),
@@ -321,7 +439,7 @@ class _InventoryDetailView extends ConsumerWidget {
         label: IconButton(
           icon: const Icon(Icons.add),
           tooltip: 'Agregar atributo',
-          onPressed: () => _showAddAttributeDialog(ref, context),
+          onPressed: () => _showAddAttributeDialog(context),
         ),
       ),
     );
@@ -366,7 +484,7 @@ class _InventoryDetailView extends ConsumerWidget {
                     keyboardType: col == "quantity"
                         ? TextInputType.number
                         : TextInputType.text,
-                    onChanged: (value) => _updateCell(ref, col, value, item),
+                    onChanged: (value) => _updateCell(col, value, item),
                   ),
                 ),
               ),
@@ -378,7 +496,7 @@ class _InventoryDetailView extends ConsumerWidget {
     }).toList();
   }
 
-  void _updateCell(WidgetRef ref, String column, String value, Item item) {
+  void _updateCell(String column, String value, Item item) {
     Item updatedItem;
     if (column == "article") {
       updatedItem = item.copyWith(name: value);
@@ -391,13 +509,11 @@ class _InventoryDetailView extends ConsumerWidget {
       updatedItem = item.copyWith(extraAttributes: updatedExtra);
     }
 
-    final items = List<Item>.from(inventory.items);
+    final items = List<Item>.from(localItems);
     final index = items.indexWhere((i) => i.id == item.id);
     if (index != -1) {
       items[index] = updatedItem;
-      ref
-          .read(inventoryNotifierProvider.notifier)
-          .updateItems(inventory.id, items);
+      onItemsChanged(items);
     }
   }
 
@@ -409,10 +525,8 @@ class _InventoryDetailView extends ConsumerWidget {
       extraAttributes: {},
     );
 
-    ref.read(inventoryNotifierProvider.notifier).addItemToInventory(
-          inventory.id,
-          newItem,
-        );
+    final updatedItems = [...localItems, newItem];
+    onItemsChanged(updatedItems);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (verticalScrollController.hasClients) {
@@ -425,15 +539,24 @@ class _InventoryDetailView extends ConsumerWidget {
     });
   }
 
-  void _removeAttribute(WidgetRef ref, String attribute) {
-    ref.read(inventoryNotifierProvider.notifier).removeExtraAttribute(
-          inventory.id,
-          attribute,
-        );
+  void _removeAttribute(String attribute) {
+    // Primero actualizamos los items para eliminar el atributo de cada uno
+    final updatedItems = localItems.map((item) {
+      final newAttributes = Map<String, dynamic>.from(item.extraAttributes);
+      newAttributes.remove(attribute);
+      return item.copyWith(extraAttributes: newAttributes);
+    }).toList();
+
+    // Actualizamos los atributos extra
+    final updatedAttributes =
+        localExtraAttributes.where((a) => a != attribute).toList();
+
+    // Notificamos los cambios
+    onItemsChanged(updatedItems);
+    onAttributesChanged(updatedAttributes);
   }
 
-  Future<void> _showAddAttributeDialog(
-      WidgetRef ref, BuildContext context) async {
+  Future<void> _showAddAttributeDialog(BuildContext context) async {
     final controller = TextEditingController();
     final result = await showDialog<String>(
       context: context,
@@ -453,7 +576,7 @@ class _InventoryDetailView extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
               final value = controller.text.trim();
               if (value.isNotEmpty) {
@@ -465,11 +588,51 @@ class _InventoryDetailView extends ConsumerWidget {
         ],
       ),
     );
+
     if (result != null && result.isNotEmpty) {
-      ref.read(inventoryNotifierProvider.notifier).addExtraAttribute(
-            inventory.id,
-            result,
-          );
+      // Agregamos el nuevo atributo a la lista local
+      final updatedAttributes = [...localExtraAttributes, result];
+      onAttributesChanged(updatedAttributes);
+    }
+  }
+
+  Future<void> _showDeleteAttributeDialog(
+      BuildContext context, String attribute) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Atributo'),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar el atributo "$attribute"?\n\n'
+          'Esta acción eliminará este campo de todos los items y no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      _removeAttribute(attribute);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Atributo "$attribute" eliminado'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

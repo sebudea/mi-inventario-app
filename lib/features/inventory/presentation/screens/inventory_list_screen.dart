@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mi_inventario/features/inventory/domain/inventory.dart';
-import 'package:mi_inventario/features/inventory/presentation/providers/inventory_provider.dart';
+import 'package:mi_inventario/features/inventory/presentation/providers/inventory_providers.dart';
 import 'package:mi_inventario/features/auth/presentation/providers/auth_provider.dart';
+import 'package:mi_inventario/features/auth/domain/user_model.dart';
 
 class InventoryListScreen extends ConsumerWidget {
   const InventoryListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final inventoriesAsync = ref.watch(inventoryNotifierProvider);
     final user = ref.watch(authProvider);
+    final inventoriesAsync = user != null
+        ? ref.watch(userInventoriesProvider(user.id))
+        : const AsyncValue<List<Inventory>>.data([]);
 
     return Scaffold(
       appBar: _buildAppBar(context, ref),
@@ -25,8 +28,7 @@ class InventoryListScreen extends ConsumerWidget {
       ),
       floatingActionButton: user != null
           ? FloatingActionButton.extended(
-              onPressed: () =>
-                  _showCreateInventoryDialog(context, ref, user.id),
+              onPressed: () => _showCreateInventoryDialog(context, ref, user),
               icon: const Icon(Icons.add),
               label: const Text('Nuevo Inventario'),
               tooltip: 'Crear nuevo inventario',
@@ -109,7 +111,7 @@ class InventoryListScreen extends ConsumerWidget {
   Future<void> _showCreateInventoryDialog(
     BuildContext context,
     WidgetRef ref,
-    String userId,
+    UserModel user,
   ) async {
     final TextEditingController controller = TextEditingController();
 
@@ -164,7 +166,10 @@ class InventoryListScreen extends ConsumerWidget {
     );
 
     if (result != null && result.isNotEmpty) {
-      ref.read(inventoryNotifierProvider.notifier).addInventory(result, userId);
+      await ref.read(inventoryNotifierProvider.notifier).createInventory(
+            name: result,
+            user: user,
+          );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -287,18 +292,11 @@ class _InventoryCard extends ConsumerWidget {
       onDismissed: (_) {
         ref
             .read(inventoryNotifierProvider.notifier)
-            .removeInventory(inventory.id);
+            .deleteInventory(inventory.id);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Inventario "${inventory.name}" eliminado'),
             behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Deshacer',
-              onPressed: () {
-                // Aquí iría la lógica para deshacer la eliminación
-                // Por ahora no la implementamos porque requeriría cambios en el provider
-              },
-            ),
           ),
         );
       },

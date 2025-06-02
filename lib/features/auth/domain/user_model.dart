@@ -7,11 +7,9 @@ part 'user_model.g.dart';
 class UserModel with _$UserModel {
   const factory UserModel({
     required String id,
-    required String name,
     required String email,
-    // IDs de inventarios donde es admin
+    required String name,
     @Default([]) List<String> ownedInventories,
-    // IDs de inventarios compartidos con el usuario
     @Default([]) List<String> sharedInventories,
   }) = _UserModel;
 

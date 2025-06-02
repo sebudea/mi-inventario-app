@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Función auxiliar para verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Función para verificar si el usuario es el administrador del inventario
+    function isInventoryAdmin(inventoryData) {
+      return isAuthenticated() && inventoryData.adminId == request.auth.uid;
+    }
+
+    // Función para verificar si el usuario tiene acceso compartido al inventario
+    function hasSharedAccess(inventoryData) {
+      return isAuthenticated() && 
+        inventoryData.sharedUsers.hasAny([request.auth.uid]);
+    }
+
+    match /inventories/{inventoryId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && 
+        (resource.data.adminId == request.auth.uid || 
+         resource.data.sharedUsers.hasAny([request.auth.uid]));
+      allow update, delete: if isInventoryAdmin(resource.data);
+    }
+  }
+} 
