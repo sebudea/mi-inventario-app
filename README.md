@@ -1,3 +1,5 @@
+[![Build and Release APK](https://github.com/sebudea/mi-inventario-app/actions/workflows/build.yml/badge.svg)](https://github.com/sebudea/mi-inventario-app/actions/workflows/build.yml)
+
 # Mi Inventario
 
 Una aplicación móvil diseñada para gestionar inventarios de manera eficiente y sencilla.
