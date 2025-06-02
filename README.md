@@ -1,4 +1,4 @@
-[![Build and Release APK](https://github.com/sebudea/mi-inventario-app/actions/workflows/build.yml/badge.svg)](https://github.com/sebudea/mi-inventario-app/actions/workflows/build.yml)
+[![Build and Release APK](https://github.com/sebudea/mi-inventario-app/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/sebudea/mi-inventario-app/actions/workflows/build.yml)
 
 # Mi Inventario
 
@@ -7,6 +7,23 @@ Una aplicación móvil diseñada para gestionar inventarios de manera eficiente 
 ## Descripción General
 
 Mi Inventario es una aplicación que permite a los usuarios gestionar múltiples inventarios de manera organizada y eficiente. Con una interfaz moderna y fácil de usar, los usuarios pueden crear, administrar y compartir sus inventarios con otros usuarios.
+
+## Capturas de Pantalla
+
+### Inicio de Sesión
+
+![Pantalla de inicio de sesión](assets/screenshots/login_screen.png)
+_Inicio de sesión seguro con Google_
+
+### Lista de Inventarios
+
+![Lista de inventarios](assets/screenshots/inventory_list.png)
+_Gestión de múltiples inventarios con interfaz intuitiva_
+
+### Detalles del Inventario
+
+![Detalles del inventario](assets/screenshots/inventory_detail.png)
+_Vista detallada de items con atributos personalizables_
 
 ## Características Principales
 
@@ -44,10 +61,6 @@ Mi Inventario es una aplicación que permite a los usuarios gestionar múltiples
   - Vista detallada de cada inventario
   - Sistema de edición en tabla
   - Interfaz intuitiva y fácil de usar
-
-## Capturas de Pantalla
-
-[Aquí se pueden agregar capturas de pantalla de la aplicación]
 
 ## Requisitos del Sistema
 
