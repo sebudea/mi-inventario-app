@@ -14,10 +14,17 @@ class InventoryNotifier extends _$InventoryNotifier {
 
   void addInventory(String name, String adminId) {
     final String uniqueId = const Uuid().v4();
+    final initialItem = Item(
+      id: const Uuid().v4(),
+      name: '',
+      quantity: null,
+      extraAttributes: {},
+    );
     final newInventory = Inventory(
       id: uniqueId,
       name: name,
       adminId: adminId,
+      items: [initialItem],
     );
 
     state.whenData((inventories) {

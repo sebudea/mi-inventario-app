@@ -21,7 +21,7 @@ class InventoryDetailScreen extends ConsumerStatefulWidget {
 
 class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
   late ScrollController _verticalScrollController;
-  int? editingRow;
+  String? selectedItemId;
   final Map<String, FocusNode> _focusNodes = {};
 
   @override
@@ -58,9 +58,9 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
           return _InventoryDetailView(
             inventory: inventory,
             verticalScrollController: _verticalScrollController,
-            editingRow: editingRow,
+            selectedItemId: selectedItemId,
             focusNodes: _focusNodes,
-            onEditingRowChanged: (index) => setState(() => editingRow = index),
+            onItemSelected: (itemId) => setState(() => selectedItemId = itemId),
           );
         },
       ),
@@ -166,21 +166,21 @@ class _ErrorView extends StatelessWidget {
 class _InventoryDetailView extends ConsumerWidget {
   final Inventory inventory;
   final ScrollController verticalScrollController;
-  final int? editingRow;
+  final String? selectedItemId;
   final Map<String, FocusNode> focusNodes;
-  final ValueChanged<int?> onEditingRowChanged;
+  final ValueChanged<String?> onItemSelected;
 
   const _InventoryDetailView({
     required this.inventory,
     required this.verticalScrollController,
-    required this.editingRow,
+    required this.selectedItemId,
     required this.focusNodes,
-    required this.onEditingRowChanged,
+    required this.onItemSelected,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = List<Item>.from(inventory.items);
+    final items = List<Item>.unmodifiable(inventory.items);
     final columns = _getAllColumns(items, inventory.extraAttributes);
 
     return Padding(
@@ -201,7 +201,7 @@ class _InventoryDetailView extends ConsumerWidget {
               child: _buildDataTable(context, ref, items, columns),
             ),
           const SizedBox(height: 16),
-          _buildBottomActions(context, ref),
+          _buildBottomActions(context, ref, items),
         ],
       ),
     );
@@ -221,12 +221,22 @@ class _InventoryDetailView extends ConsumerWidget {
         child: DataTable(
           columns: _buildColumns(context, ref, columns),
           rows: _buildRows(items, columns, ref),
+          showCheckboxColumn: true,
         ),
       ),
     );
   }
 
-  Widget _buildBottomActions(BuildContext context, WidgetRef ref) {
+  Widget _buildBottomActions(
+      BuildContext context, WidgetRef ref, List<Item> items) {
+    final selectedItem = selectedItemId != null
+        ? items.firstWhere(
+            (item) => item.id == selectedItemId,
+            orElse: () =>
+                Item(id: '', name: '', quantity: null, extraAttributes: {}),
+          )
+        : null;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -235,7 +245,7 @@ class _InventoryDetailView extends ConsumerWidget {
           label: const Text('Agregar Item'),
           onPressed: () => _addRow(ref),
         ),
-        if (editingRow != null)
+        if (selectedItem != null && selectedItem.id.isNotEmpty)
           ElevatedButton.icon(
             icon: const Icon(Icons.delete),
             label: const Text('Eliminar Item'),
@@ -243,14 +253,35 @@ class _InventoryDetailView extends ConsumerWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            onPressed: () => _deleteCurrentRow(context, ref),
+            onPressed: () => _deleteItem(context, ref, selectedItem),
           ),
       ],
     );
   }
 
+  void _deleteItem(BuildContext context, WidgetRef ref, Item itemToDelete) {
+    if (itemToDelete.id.isEmpty) return;
+
+    final updatedItems = List<Item>.from(inventory.items)
+      ..removeWhere((item) => item.id == itemToDelete.id);
+
+    ref.read(inventoryNotifierProvider.notifier).updateItems(
+          inventory.id,
+          updatedItems,
+        );
+
+    onItemSelected(null);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Item eliminado'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   List<String> _getAllColumns(List<Item> items, List<String> extraAttributes) {
-    final Set<String> columns = {"name", "quantity"};
+    final Set<String> columns = {"article", "quantity"};
     columns.addAll(extraAttributes);
     for (final item in items) {
       columns.addAll(item.extraAttributes.keys);
@@ -267,7 +298,7 @@ class _InventoryDetailView extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              col[0].toUpperCase() + col.substring(1),
+              _getColumnTitle(col),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             if (isExtra)
@@ -300,21 +331,20 @@ class _InventoryDetailView extends ConsumerWidget {
 
   List<DataRow> _buildRows(
       List<Item> items, List<String> columns, WidgetRef ref) {
-    return List<DataRow>.generate(
-      items.length,
-      (rowIndex) => DataRow(
-        selected: editingRow == rowIndex,
+    return items.map((item) {
+      return DataRow(
+        key: ValueKey(item.id),
+        selected: item.id == selectedItemId,
         onSelectChanged: (selected) {
-          onEditingRowChanged(selected == true ? rowIndex : null);
+          onItemSelected(selected == true ? item.id : null);
         },
         cells: [
           ...columns.map((col) {
             String initialValue;
-            final item = items[rowIndex];
-            if (col == "name") {
+            if (col == "article") {
               initialValue = item.name;
             } else if (col == "quantity") {
-              initialValue = item.quantity.toString();
+              initialValue = item.quantity?.toString() ?? '';
             } else {
               initialValue = item.extraAttributes[col]?.toString() ?? '';
             }
@@ -325,12 +355,13 @@ class _InventoryDetailView extends ConsumerWidget {
                   maxWidth: 120,
                 ),
                 child: Focus(
-                  focusNode: focusNodes['$rowIndex-$col'] ??= FocusNode(),
+                  focusNode: focusNodes['${item.id}-$col'] ??= FocusNode(),
                   child: TextFormField(
+                    key: ValueKey('${item.id}-$col'),
                     initialValue: initialValue,
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: col == "name" ? "Nombre" : "Valor",
+                      hintText: _getColumnHint(col),
                     ),
                     keyboardType: col == "quantity"
                         ? TextInputType.number
@@ -343,16 +374,17 @@ class _InventoryDetailView extends ConsumerWidget {
           }).toList(),
           DataCell(Container()),
         ],
-      ),
-    );
+      );
+    }).toList();
   }
 
   void _updateCell(WidgetRef ref, String column, String value, Item item) {
     Item updatedItem;
-    if (column == "name") {
+    if (column == "article") {
       updatedItem = item.copyWith(name: value);
     } else if (column == "quantity") {
-      updatedItem = item.copyWith(quantity: int.tryParse(value) ?? 0);
+      final quantity = value.trim().isEmpty ? null : int.tryParse(value);
+      updatedItem = item.copyWith(quantity: quantity);
     } else {
       final updatedExtra = Map<String, dynamic>.from(item.extraAttributes);
       updatedExtra[column] = value;
@@ -373,7 +405,7 @@ class _InventoryDetailView extends ConsumerWidget {
     final newItem = Item(
       id: const Uuid().v4(),
       name: '',
-      quantity: 0,
+      quantity: null,
       extraAttributes: {},
     );
 
@@ -391,23 +423,6 @@ class _InventoryDetailView extends ConsumerWidget {
         );
       }
     });
-  }
-
-  void _deleteCurrentRow(BuildContext context, WidgetRef ref) {
-    if (editingRow != null) {
-      final items = List<Item>.from(inventory.items);
-      items.removeAt(editingRow!);
-      ref
-          .read(inventoryNotifierProvider.notifier)
-          .updateItems(inventory.id, items);
-      onEditingRowChanged(null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Item eliminado'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
   void _removeAttribute(WidgetRef ref, String attribute) {
@@ -455,6 +470,28 @@ class _InventoryDetailView extends ConsumerWidget {
             inventory.id,
             result,
           );
+    }
+  }
+
+  String _getColumnHint(String column) {
+    switch (column) {
+      case "article":
+        return "Artículo";
+      case "quantity":
+        return "Cantidad";
+      default:
+        return "Valor";
+    }
+  }
+
+  String _getColumnTitle(String column) {
+    switch (column) {
+      case "article":
+        return "Artículo";
+      case "quantity":
+        return "Cantidad";
+      default:
+        return column[0].toUpperCase() + column.substring(1);
     }
   }
 }

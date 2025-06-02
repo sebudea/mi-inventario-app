@@ -9,7 +9,7 @@ part of 'item.dart';
 _$ItemImpl _$$ItemImplFromJson(Map<String, dynamic> json) => _$ItemImpl(
       id: json['id'] as String,
       name: json['name'] as String,
-      quantity: (json['quantity'] as num).toInt(),
+      quantity: (json['quantity'] as num?)?.toInt(),
       extraAttributes:
           json['extraAttributes'] as Map<String, dynamic>? ?? const {},
     );

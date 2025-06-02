@@ -8,7 +8,7 @@ class Item with _$Item {
   const factory Item({
     required String id,
     required String name,
-    required int quantity,
+    required int? quantity,
     @Default({}) Map<String, dynamic> extraAttributes,
   }) = _Item;
 

@@ -22,7 +22,7 @@ Item _$ItemFromJson(Map<String, dynamic> json) {
 mixin _$Item {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
-  int get quantity => throw _privateConstructorUsedError;
+  int? get quantity => throw _privateConstructorUsedError;
   Map<String, dynamic> get extraAttributes =>
       throw _privateConstructorUsedError;
 
@@ -43,7 +43,7 @@ abstract class $ItemCopyWith<$Res> {
   $Res call(
       {String id,
       String name,
-      int quantity,
+      int? quantity,
       Map<String, dynamic> extraAttributes});
 }
 
@@ -64,7 +64,7 @@ class _$ItemCopyWithImpl<$Res, $Val extends Item>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? quantity = null,
+    Object? quantity = freezed,
     Object? extraAttributes = null,
   }) {
     return _then(_value.copyWith(
@@ -76,10 +76,10 @@ class _$ItemCopyWithImpl<$Res, $Val extends Item>
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String,
-      quantity: null == quantity
+      quantity: freezed == quantity
           ? _value.quantity
           : quantity // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       extraAttributes: null == extraAttributes
           ? _value.extraAttributes
           : extraAttributes // ignore: cast_nullable_to_non_nullable
@@ -98,7 +98,7 @@ abstract class _$$ItemImplCopyWith<$Res> implements $ItemCopyWith<$Res> {
   $Res call(
       {String id,
       String name,
-      int quantity,
+      int? quantity,
       Map<String, dynamic> extraAttributes});
 }
 
@@ -116,7 +116,7 @@ class __$$ItemImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? quantity = null,
+    Object? quantity = freezed,
     Object? extraAttributes = null,
   }) {
     return _then(_$ItemImpl(
@@ -128,10 +128,10 @@ class __$$ItemImplCopyWithImpl<$Res>
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String,
-      quantity: null == quantity
+      quantity: freezed == quantity
           ? _value.quantity
           : quantity // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       extraAttributes: null == extraAttributes
           ? _value._extraAttributes
           : extraAttributes // ignore: cast_nullable_to_non_nullable
@@ -158,7 +158,7 @@ class _$ItemImpl implements _Item {
   @override
   final String name;
   @override
-  final int quantity;
+  final int? quantity;
   final Map<String, dynamic> _extraAttributes;
   @override
   @JsonKey()
@@ -211,7 +211,7 @@ abstract class _Item implements Item {
   const factory _Item(
       {required final String id,
       required final String name,
-      required final int quantity,
+      required final int? quantity,
       final Map<String, dynamic> extraAttributes}) = _$ItemImpl;
 
   factory _Item.fromJson(Map<String, dynamic> json) = _$ItemImpl.fromJson;
@@ -221,7 +221,7 @@ abstract class _Item implements Item {
   @override
   String get name;
   @override
-  int get quantity;
+  int? get quantity;
   @override
   Map<String, dynamic> get extraAttributes;
 
